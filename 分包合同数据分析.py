@@ -14,7 +14,7 @@ def check_password():
         """检查输入的密码是否正确"""
         if st.session_state["password"] == "yuelifeng@2018":
             st.session_state["password_correct"] = True
-            del st.session_state["password"]  #删除密码，不存储
+            del st.session_state["password"]  # 删除密码，不存储
         else:
             st.session_state["password_correct"] = False
     
@@ -31,7 +31,7 @@ def check_password():
         "请输入访问密码:", 
         type="password", 
         key="password",
-        on_change=password_entered
+       on_change=password_entered
     )
     
     if "password" in st.session_state and not st.session_state["password_correct"]:
@@ -71,7 +71,7 @@ def load_data():
         if '承办部门' in df.columns:
             df['承办部门'] = df['承办部门'].fillna('未知部门')
         return df
-    except Exception as e:  # 这里修正了语法错误
+    except Exception as e:
         st.error(f"读取数据时出错: {str(e)}")
         return None
 
@@ -85,94 +85,44 @@ current_time = datetime.now()
 COLOR_SCHEME = ['#4285F4', '#34A853', '#FBBC05', '#EA4335']
 
 # 创建Plotly图表
-def create_plotly_chart(data, title, x_label, y_label, chart_type="2D", is_amount=False):
+def create_plotly_chart(data, title, x_label, y_labels):
     """创建Plotly图表"""
+    fig = go.Figure()
     
-    if chart_type == "2D":
-        fig = go.Figure()
-        
+    for i, y_label in enumerate(y_labels):
         fig.add_trace(go.Bar(
             x=data.index,
             y=data[y_label],
             name=y_label,
-            marker_color=COLOR_SCHEME[0] if not is_amount else COLOR_SCHEME[1],
+            marker_color=COLOR_SCHEME[i % len(COLOR_SCHEME)],
             text=data[y_label],
-            texttemplate='%{text:,.0f}' if is_amount else '%{text}',
+            texttemplate='%{text:,.0f}' if '金额' in y_label else '%{text}',
             textposition='outside',
-            hovertemplate=f"{x_label}: %{{x}}<br>{y_label}: %{{y:,.0f if is_amount else :.0f}}<extra></extra>"
+            hovertemplate=f"{x_label}: %{{x}}<br>{y_label}: %{{y:,.0f if '金额' in y_label else :.0f}}<extra></extra>"
         ))
-        
-        fig.update_layout(
-            title=dict(
-                text=title,
-                x=0.5,
-                xanchor='center',
-                font=dict(size=18, color='black')
-            ),
-            xaxis=dict(
-                title=x_label,
-                title_font=dict(size=14, color='gray'),
-                tickfont=dict(size=12, color='gray')
-            ),
-            yaxis=dict(
-                title=y_label,
-                title_font=dict(size=14, color='gray'),
-                tickfont=dict(size=12,color='gray')
-            ),
-            height=500,
-            margin=dict(l=50, r=50, t=80, b=120),
-            plot_bgcolor='white',
-            font=dict(family="Microsoft YaHei, SimHei, Arial, sans-serif")
-        )
-        
-    else:  # 3D图表
-        fig = go.Figure()
-        
-        fig.add_trace(go.Bar(
-            x=data.index,
-            y=data[y_label],
-            name=y_label,
-            marker_color=COLOR_SCHEME[0] if not is_amount else COLOR_SCHEME[1],
-            text=data[y_label],
-            texttemplate='%{text:,.0f}' if is_amount else '%{text}',
-            textposition='outside',
-            hovertemplate=f"{x_label}: %{{x}}<br>{y_label}: %{{y:,.0f if is_amount else :.0f}}<extra></extra>"
-        ))
-        
-        # 转换为3D效果
-        fig.update_layout(
-            title=dict(
-                text=title,
-                x=0.5,
-                xanchor='center',
-                font=dict(size=18, color='black')
-            ),
-            scene=dict(
-                xaxis=dict(
-                    title=x_label,
-                    title_font=dict(size=14, color='gray'),
-                    tickfont=dict(size=12, color='gray'),
-                    type='category'
-                ),
-                yaxis=dict(
-                    title=y_label,
-                    title_font=dict(size=14, color='gray'),
-                    tickfont=dict(size=12, color='gray')
-                ),
-                zaxis=dict(
-                    title='',
-                    showticklabels=False
-                ),
-                camera=dict(
-                    up=dict(x=0, y=0, z=1),
-                    center=dict(x=0, y=0, z=0),
-                    eye=dict(x=1.5, y=1.5, z=0.8)
-                )
-            ),
-            height=600,
-            margin=dict(l=50, r=50, t=80, b=120),
-            font=dict(family="Microsoft YaHei, SimHei, Arial, sans-serif")
-        )
+    
+    fig.update_layout(
+        title=dict(
+            text=title,
+            x=0.5,
+            xanchor='center',
+            font=dict(size=18, color='black')
+        ),
+        xaxis=dict(
+            title=x_label,
+            title_font=dict(size=14, color='gray'),
+            tickfont=dict(size=12, color='gray')
+        ),
+        yaxis=dict(
+            title_font=dict(size=14, color='gray'),
+            tickfont=dict(size=12,color='gray')
+        ),
+        barmode='group',
+        height=500,
+        margin=dict(l=50, r=50, t=80, b=120),
+        plot_bgcolor='white',
+        font=dict(family="Microsoft YaHei, SimHei, Arial, sans-serif")
+    )
     
     return fig
 
@@ -214,7 +164,6 @@ with st.sidebar:
             procurement_types = df['选商方式'].unique().tolist()
         selected_types1 = st.multiselect("选择采购类别", procurement_types, default=procurement_types, key="type1")
         
-        chart_type1 = st.radio("选择图表类型", ["2D显示", "3D显示"], key="chart1", horizontal=True)
         apply_filter1 = st.button("执行筛选条件", key="apply1")
         st.markdown('</div>', unsafe_allow_html=True)
     
@@ -230,7 +179,6 @@ with st.sidebar:
         
         selected_departments2 = st.multiselect("选择承办部门", departments, default=["经营管理部（预结算中心）"], key="dept2")
         
-        chart_type2 = st.radio("选择图表类型", ["2D显示", "3D显示"], key="chart2", horizontal=True)
         apply_filter2 = st.button("执行筛选条件", key="apply2")
         st.markdown('</div>', unsafe_allow_html=True)
     
@@ -246,7 +194,6 @@ with st.sidebar:
         
         selected_departments3 = st.multiselect("选择承办部门", departments, default=["经营管理部（预结算中心）"], key="dept3")
         
-        chart_type3 = st.radio("选择图表类型", ["2D显示", "3D显示"], key="chart3", horizontal=True)
         apply_filter3 = st.button("执行筛选条件", key="apply3")
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -255,23 +202,6 @@ col1, col2 = st.columns([2, 8])
 
 # 第一部分结果展示
 if apply_filter1:
-    with col1:
-        st.markdown("""
-        <style>
-        .filter-info {
-            font-size: 0.8em;
-            color: #666;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        st.markdown('<div class="filter-info">', unsafe_allow_html=True)
-        st.subheader("筛选条件")
-        st.write(f"时间范围: {start_date1} 至 {end_date1}")
-        st.write(f"承办部门: {', '.join(selected_departments1) if selected_departments1 else '全部'}")
-        st.write(f"采购类别: {', '.join(selected_types1) if selected_types1 else '全部'}")
-        st.markdown('</div>', unsafe_allow_html=True)
-    
     with col2:
         filtered_df1 = df[
             (df['签订时间'] >= pd.to_datetime(start_date1)) & 
@@ -287,42 +217,19 @@ if apply_filter1:
                 合同金额=('标的金额', 'sum')
             ).reset_index().set_index('选商方式')
             
-            # 分别显示数量和金额图表
-            tab1, tab2 = st.tabs(["合同数量", "合同金额"])
-            
-            with tab1:
-                fig_count = create_plotly_chart(
-                    stats1,
-                    "采购类别合同数量分析",
-                    "采购类别",
-                    "合同数量",
-                    "3D" if chart_type1 == "3D显示" else "2D",
-                    False
-                )
-                st.plotly_chart(fig_count, use_container_width=True)
-            
-            with tab2:
-                fig_amount = create_plotly_chart(
-                    stats1,
-                    "采购类别合同金额分析",
-                    "采购类别",
-                    "合同金额",
-                    "3D" if chart_type1 == "3D显示" else "2D",
-                    True
-                )
-                st.plotly_chart(fig_amount, use_container_width=True)
+            st.subheader("合同数量金额分析结果")
+            fig1 = create_plotly_chart(
+                stats1,
+                "采购类别合同数量与金额分析",
+                "采购类别",
+                ["合同数量", "合同金额"]
+            )
+            st.plotly_chart(fig1, use_container_width=True)
         else:
             st.warning("没有符合条件的数据")
 
 # 第二部分结果展示
 if apply_filter2:
-    with col1:
-        st.markdown('<div class="filter-info">', unsafe_allow_html=True)
-        st.subheader("筛选条件")
-        st.write(f"时间范围: {start_date2} 至 {end_date2}")
-        st.write(f"承办部门: {', '.join(selected_departments2) if selected_departments2 else '全部'}")
-        st.markdown('</div>', unsafe_allow_html=True)
-    
     with col2:
         # 筛选在建项目（履行期限(止) > 当前时间）
         ongoing_projects = df[
@@ -342,42 +249,19 @@ if apply_filter2:
                 在建项目金额=('标的金额', 'sum')
             ).reset_index().set_index('年份')
             
-            # 分别显示数量和金额图表
-            tab1, tab2 = st.tabs(["在建项目数量", "在建项目金额"])
-            
-            with tab1:
-                fig_count = create_plotly_chart(
-                    stats2,
-                    "在建项目数量分析",
-                    "年份",
-                    "在建项目数量",
-                    "3D" if chart_type2 == "3D显示" else "2D",
-                    False
-                )
-                st.plotly_chart(fig_count, use_container_width=True)
-            
-            with tab2:
-                fig_amount = create_plotly_chart(
-                    stats2,
-                    "在建项目金额分析",
-                    "年份",
-                    "在建项目金额",
-                    "3D" if chart_type2 == "3D显示" else "2D",
-                    True
-                )
-                st.plotly_chart(fig_amount, use_container_width=True)
+            st.subheader("在建项目分析结果")
+            fig2 = create_plotly_chart(
+                stats2,
+                "在建项目数量与金额分析",
+                "年份",
+                ["在建项目数量", "在建项目金额"]
+            )
+            st.plotly_chart(fig2, use_container_width=True)
         else:
             st.warning("没有符合条件的在建项目")
 
 # 第三部分结果展示
 if apply_filter3:
-    with col1:
-        st.markdown('<div class="filter-info">', unsafe_allow_html=True)
-        st.subheader("筛选条件")
-        st.write(f"时间范围: {start_date3} 至 {end_date3}")
-        st.write(f"承办部门: {', '.join(selected_departments3) if selected_departments3 else '全部'}")
-        st.markdown('</div>', unsafe_allow_html=True)
-    
     with col2:
         filtered_df3 = df[
             (df['签订时间'] >= pd.to_datetime(start_date3)) & 
@@ -405,30 +289,14 @@ if apply_filter3:
             stats3 = pd.concat([overpaid_stats, unpaid_stats], axis=1).fillna(0)
             stats3['已定未付金额'] = stats3['已定未付金额'].abs()  # 取绝对值
             
-            # 分别显示数量图表和金额图表
-            tab1, tab2 = st.tabs(["付款数量分析", "付款金额分析"])
-            
-            with tab1:
-                fig_count = create_plotly_chart(
-                    stats3,
-                    "分包付款数量分析",
-                    "年份",
-                    "已定超付数量",
-                    "3D" if chart_type3 == "3D显示" else "2D",
-                    False
-                )
-                st.plotly_chart(fig_count, use_container_width=True)
-            
-            with tab2:
-                fig_amount = create_plotly_chart(
-                    stats3,
-                    "分包付款金额分析",
-                    "年份",
-                    "已定超付金额",
-                    "3D" if chart_type3 == "3D显示" else "2D",
-                    True
-                )
-                st.plotly_chart(fig_amount, use_container_width=True)
+            st.subheader("分包付款分析结果")
+            fig3 = create_plotly_chart(
+                stats3,
+                "分包付款分析",
+                "年份",
+                ["已定超付数量", "已定超付金额", "已定未付数量", "已定未付金额"]
+            )
+            st.plotly_chart(fig3, use_container_width=True)
         else:
             st.warning("没有符合条件的数据")
 
