@@ -117,7 +117,7 @@ def create_plotly_chart(data, title, x_label, y_labels, chart_type="2D"):
             ),
             yaxis=dict(
                 title_font=dict(size=14, color='gray'),
-                tickfont=dict(size=12, color='gray')
+                tickfont=dict(size=12,color='gray')
             ),
             barmode='group',
             height=500,
@@ -129,14 +129,26 @@ def create_plotly_chart(data, title, x_label, y_labels, chart_type="2D"):
     else:  # 3D图表
         fig = go.Figure()
         
+        # 标准化数据以适应3D视图
+        max_value = data.max().max()
+        scale_factor = 1 if max_value == 0 else 100 / max_value
+        
         for i, y_label in enumerate(y_labels):
             fig.add_trace(go.Bar3d(
-                x=data.index.tolist(),
+                x=data.index.astype(str).tolist(),
                 y=[y_label] * len(data),
-                z=data[y_label],
+                z=data[y_label] * scale_factor,
                 name=y_label,
-                marker=dict(color=COLOR_SCHEME[i % len(COLOR_SCHEME)]),
-                hovertemplate=f"{x_label}: %{{x}}<br>指标: {y_label}<br>值: %{{z:,.0f}}<extra></extra>"
+                marker=dict(
+                    color=COLOR_SCHEME[i % len(COLOR_SCHEME)],
+                    opacity=0.8
+                ),
+                text=data[y_label],
+                hovertemplate=f"""
+                <b>{x_label}</b>: %{{x}}<br>
+                <b>{y_label}</b>: %{{text:,.0f}}<br>
+                <extra></extra>
+                """
             ))
         
         fig.update_layout(
@@ -147,9 +159,21 @@ def create_plotly_chart(data, title, x_label, y_labels, chart_type="2D"):
                 font=dict(size=18, color='black')
             ),
             scene=dict(
-                xaxis_title=x_label,
-                yaxis_title='指标',
-                zaxis_title='值',
+                xaxis=dict(
+                    title=x_label,
+                    title_font=dict(size=14, color='gray'),
+                    tickfont=dict(size=12, color='gray')
+                ),
+                yaxis=dict(
+                    title='指标',
+                    title_font=dict(size=14, color='gray'),
+                    tickfont=dict(size=12, color='gray')
+                ),
+                zaxis=dict(
+                    title='值',
+                    title_font=dict(size=14, color='gray'),
+                    tickfont=dict(size=12, color='gray')
+                ),
                 camera=dict(
                     up=dict(x=0, y=0, z=1),
                     center=dict(x=0, y=0, z=0),
@@ -166,10 +190,23 @@ def create_plotly_chart(data, title, x_label, y_labels, chart_type="2D"):
 
 # 侧边栏设置
 with st.sidebar:
+    st.markdown("""
+    <style>
+    .sidebar .sidebar-content {
+        width: 350px;
+    }
+    .filter-section {
+        font-size: 0.9em;
+        margin-bottom: 1em;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     st.header("筛选条件")
     
     # 第一部分筛选条件 - 合同数量金额分析
     with st.container():
+        st.markdown('<div class="filter-section">', unsafe_allow_html=True)
         st.subheader("合同数量金额分析")
         
         # 时间范围
@@ -191,11 +228,13 @@ with st.sidebar:
         
         chart_type1 = st.radio("选择图表类型", ["2D显示", "3D显示"], key="chart1", horizontal=True)
         apply_filter1 = st.button("执行筛选条件", key="apply1")
+        st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("---")
     
     # 第二部分筛选条件 - 在建项目分析
     with st.container():
+        st.markdown('<div class="filter-section">', unsafe_allow_html=True)
         st.subheader("在建项目分析")
         
         start_date2 = st.date_input("最早签订时间", min_date, min_value=min_date, max_value=max_date, key="start2")
@@ -205,11 +244,13 @@ with st.sidebar:
         
         chart_type2 = st.radio("选择图表类型", ["2D显示", "3D显示"], key="chart2", horizontal=True)
         apply_filter2 = st.button("执行筛选条件", key="apply2")
+        st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("---")
     
     # 第三部分筛选条件 - 分包付款分析
     with st.container():
+        st.markdown('<div class="filter-section">', unsafe_allow_html=True)
         st.subheader("分包付款分析")
         
         start_date3 = st.date_input("最早签订时间", min_date, min_value=min_date, max_value=max_date, key="start3")
@@ -219,17 +260,29 @@ with st.sidebar:
         
         chart_type3 = st.radio("选择图表类型", ["2D显示", "3D显示"], key="chart3", horizontal=True)
         apply_filter3 = st.button("执行筛选条件", key="apply3")
+        st.markdown('</div>', unsafe_allow_html=True)
 
-# 主页面布局
-col1, col2 = st.columns([1, 4])
+# 主页面布局 - 调整比例为左侧20%，右侧80%
+col1, col2 = st.columns([2, 8])
 
 # 第一部分结果展示
 if apply_filter1:
     with col1:
+        st.markdown("""
+        <style>
+        .filter-info {
+            font-size: 0.8em;
+            color: #666;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        st.markdown('<div class="filter-info">', unsafe_allow_html=True)
         st.subheader("筛选条件")
         st.write(f"时间范围: {start_date1} 至 {end_date1}")
         st.write(f"承办部门: {', '.join(selected_departments1) if selected_departments1 else '全部'}")
         st.write(f"采购类别: {', '.join(selected_types1) if selected_types1 else '全部'}")
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
         filtered_df1 = df[
@@ -260,9 +313,11 @@ if apply_filter1:
 # 第二部分结果展示
 if apply_filter2:
     with col1:
+        st.markdown('<div class="filter-info">', unsafe_allow_html=True)
         st.subheader("筛选条件")
         st.write(f"时间范围: {start_date2} 至 {end_date2}")
         st.write(f"承办部门: {', '.join(selected_departments2) if selected_departments2 else '全部'}")
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
         # 筛选在建项目（履行期限(止) > 当前时间）
@@ -297,13 +352,15 @@ if apply_filter2:
 # 第三部分结果展示
 if apply_filter3:
     with col1:
+        st.markdown('<div class="filter-info">', unsafe_allow_html=True)
         st.subheader("筛选条件")
         st.write(f"时间范围: {start_date3} 至 {end_date3}")
         st.write(f"承办部门: {', '.join(selected_departments3) if selected_departments3 else '全部'}")
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
         filtered_df3 = df[
-            (df['签订时间'] >= pdeto_datetime(start_date3)) & 
+            (df['签订时间'] >= pd.to_datetime(start_date3)) & 
             (df['签订时间'] <= pd.to_datetime(end_date3)) & 
             (df['承办部门'].isin(selected_departments3))
         ].copy()
