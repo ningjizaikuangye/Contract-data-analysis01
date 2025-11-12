@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 # 设置页面布局
-st.set_page_config(page_title="分包合同组合分析", layout="wide")
+st.set_page_config(page_title="分包合同组合分析系统", layout="wide")
 
 # 密码验证函数
 def check_password():
@@ -81,53 +81,86 @@ if df is None:
 
 current_time = datetime.now()
 
-# 定义颜色方案
-COLOR_SCHEME = ['#4285F4', '#34A853', '#FBBC05', '#EA4335']  # Google主题颜色
+# 颜色方案
+COLOR_SCHEME = ['#4285F4', '#34A853', '#FBBC05', '#EA4335']
 
-# 创建Plotly图表函数
-def create_bar_chart(data, title, xlabel, ylabel, color_index=0):
-    """创建Plotly柱状图"""
-    fig = go.Figure()
+# 创建Plotly图表
+def create_plotly_chart(data, title, x_label, y_labels, chart_type="2D"):
+    """创建Plotly图表"""
     
-    if hasattr(data, 'values'):
-        values = data.values
-        labels = data.index.tolist()
-    else:
-        values = data
-        labels = [f"类别{i}" for i in range(len(data))]
-    
-    fig.add_trace(go.Bar(
-        x=labels,
-        y=values,
-        marker_color=COLOR_SCHEME[color_index % len(COLOR_SCHEME)],
-        text=values,
-        texttemplate='%{text:.0f}' if '数量' in ylabel else '%{text:,.0f}',
-        textposition='outside',
-        hovertemplate=f"{xlabel}: %{{x}}<br>{ylabel}: %{{y:,}}<extra></extra>"
-    ))
-    
-    fig.update_layout(
-        title={
-            'text': title,
-            'x': 0.5,
-            'xanchor': 'center',
-            'font': {'size': 18, 'color': '#333333'}
-        },
-        xaxis={
-            'title': xlabel,
-            'title_font': {'size': 14, 'color': '#666666'},
-            'tickfont': {'size': 12, 'color': '#666666'}
-        },
-        yaxis={
-            'title': ylabel,
-            'title_font': {'size': 14, 'color': '#666666'},
-            'tickfont': {'size': 12, 'color': '#666666'}
-        },
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        height=500,
-        margin={'l': 50, 'r': 50, 't': 80, 'b': 120}
-    )
+    if chart_type == "2D":
+        fig = go.Figure()
+        
+        for i, y_label in enumerate(y_labels):
+            fig.add_trace(go.Bar(
+                x=data.index,
+                y=data[y_label],
+                name=y_label,
+                marker_color=COLOR_SCHEME[i % len(COLOR_SCHEME)],
+                text=data[y_label],
+                texttemplate='%{text:,.0f}' if '金额' in y_label else '%{text}',
+                textposition='outside',
+                hovertemplate=f"{x_label}: %{{x}}<br>{y_label}: %{{y:,.0f}}<extra></extra>"
+            ))
+        
+        fig.update_layout(
+            title=dict(
+                text=title,
+                x=0.5,
+                xanchor='center',
+                font=dict(size=18, color='black')
+            ),
+            xaxis=dict(
+                title=x_label,
+                title_font=dict(size=14, color='gray'),
+                tickfont=dict(size=12, color='gray')
+            ),
+            yaxis=dict(
+                title_font=dict(size=14, color='gray'),
+                tickfont=dict(size=12, color='gray')
+            ),
+            barmode='group',
+            height=500,
+            margin=dict(l=50, r=50, t=80, b=120),
+            plot_bgcolor='white',
+            font=dict(family="Microsoft YaHei, SimHei, Arial, sans-serif")
+        )
+        
+    else:  # 3D图表
+        fig = go.Figure()
+        
+        for i, y_label in enumerate(y_labels):
+            fig.add_trace(go.Bar3d(
+                x=data.index.tolist(),
+                y=[y_label] * len(data),
+                z=data[y_label],
+                name=y_label,
+                marker=dict(color=COLOR_SCHEME[i % len(COLOR_SCHEME)]),
+                hovertemplate=f"{x_label}: %{{x}}<br>指标: {y_label}<br>值: %{{z:,.0f}}<extra></extra>"
+            ))
+        
+        fig.update_layout(
+            title=dict(
+                text=title,
+                x=0.5,
+                xanchor='center',
+                font=dict(size=18, color='black')
+            ),
+            scene=dict(
+                xaxis_title=x_label,
+                yaxis_title='指标',
+                zaxis_title='值',
+                camera=dict(
+                    up=dict(x=0, y=0, z=1),
+                    center=dict(x=0, y=0, z=0),
+                    eye=dict(x=1.5, y=1.5, z=0.8)
+                ),
+                aspectratio=dict(x=1.5, y=1, z=0.8)
+            ),
+            height=600,
+            margin=dict(l=50, r=50, t=80, b=120),
+            font=dict(family="Microsoft YaHei, SimHei, Arial, sans-serif")
+        )
     
     return fig
 
@@ -135,216 +168,177 @@ def create_bar_chart(data, title, xlabel, ylabel, color_index=0):
 with st.sidebar:
     st.header("筛选条件")
     
-    # 第一部分筛选条件：合同数量金额分析
-    with st.expander("合同数量金额分析", expanded=True):
+    # 第一部分筛选条件 - 合同数量金额分析
+    with st.container():
+        st.subheader("合同数量金额分析")
+        
+        # 时间范围
         min_date = df['签订时间'].min().to_pydatetime()
         max_date = df['签订时间'].max().to_pydatetime()
-        part1_start_date = st.date_input("最早签订时间", min_date, 
-                                       min_value=min_date, max_value=max_date, 
-                                       key="part1_start")
-        part1_end_date = st.date_input("最晚签订时间", max_date, 
-                                     min_value=min_date, max_value=max_date,
-                                     key="part1_end")
+        start_date1 = st.date_input("最早签订时间", min_date, min_value=min_date, max_value=max_date, key="start1")
+        end_date1 = st.date_input("最晚签订时间", max_date, min_value=min_date, max_value=max_date, key="end1")
         
+        # 部门筛选
         departments = df['承办部门'].unique().tolist()
-        part1_selected_dept = st.multiselect("选择承办部门", departments, default=departments,
-                                           key="part1_dept")
+        selected_departments1 = st.multiselect("选择承办部门", departments, default=departments, key="dept1")
         
-        if part1_selected_dept:
-            procurement_types = df[df['承办部门'].isin(part1_selected_dept)]['选商方式'].unique().tolist()
+        # 采购类别(动态更新)
+        if selected_departments1:
+            procurement_types = df[df['承办部门'].isin(selected_departments1)]['选商方式'].unique().tolist()
         else:
             procurement_types = df['选商方式'].unique().tolist()
-        part1_selected_types = st.multiselect("选择采购类别", procurement_types, default=procurement_types,
-                                            key="part1_types")
+        selected_types1 = st.multiselect("选择采购类别", procurement_types, default=procurement_types, key="type1")
         
-        chart_type_part1 = st.radio("选择图表类型", ["数量分析", "金额分析"], key="chart_type_part1")
+        chart_type1 = st.radio("选择图表类型", ["2D显示", "3D显示"], key="chart1", horizontal=True)
+        apply_filter1 = st.button("执行筛选条件", key="apply1")
     
-    # 第二部分筛选条件：在建项目分析
-    with st.expander("在建项目分析", expanded=True):
-        part2_start_date = st.date_input("最早签订时间", min_date, 
-                                       min_value=min_date, max_value=max_date,
-                                       key="part2_start")
-        part2_end_date = st.date_input("最晚签订时间", max_date, 
-                                     min_value=min_date, max_value=max_date,
-                                     key="part2_end")
-        
-        part2_selected_dept = st.multiselect("选择承办部门", departments, 
-                                           default=["经营管理部（预结算中心）"],
-                                           key="part2_dept")
-        
-        chart_type_part2 = st.radio("选择图表类型", ["数量分析", "金额分析"], key="chart_type_part2")
+    st.markdown("---")
     
-    # 第三部分筛选条件：分包付款分析
-    with st.expander("分包付款分析", expanded=True):
-        part3_start_date = st.date_input("最早签订时间", min_date, 
-                                       min_value=min_date, max_value=max_date,
-                                       key="part3_start")
-        part3_end_date = st.date_input("最晚签订时间", max_date, 
-                                     min_value=min_date, max_value=max_date,
-                                     key="part3_end")
+    # 第二部分筛选条件 - 在建项目分析
+    with st.container():
+        st.subheader("在建项目分析")
         
-        part3_selected_dept = st.multiselect("选择承办部门", departments, 
-                                           default=["经营管理部（预结算中心）"],
-                                           key="part3_dept")
+        start_date2 = st.date_input("最早签订时间", min_date, min_value=min_date, max_value=max_date, key="start2")
+        end_date2 = st.date_input("最晚签订时间", max_date, min_value=min_date, max_value=max_date, key="end2")
         
-        chart_type_part3 = st.radio("选择图表类型", ["超付分析", "未付分析"], key="chart_type_part3")
+        selected_departments2 = st.multiselect("选择承办部门", departments, default=["经营管理部（预结算中心）"], key="dept2")
+        
+        chart_type2 = st.radio("选择图表类型", ["2D显示", "3D显示"], key="chart2", horizontal=True)
+        apply_filter2 = st.button("执行筛选条件", key="apply2")
     
-    # 执行筛选按钮
-    apply_filter = st.button("执行筛选条件")
+    st.markdown("---")
+    
+    # 第三部分筛选条件 - 分包付款分析
+    with st.container():
+        st.subheader("分包付款分析")
+        
+        start_date3 = st.date_input("最早签订时间", min_date, min_value=min_date, max_value=max_date, key="start3")
+        end_date3 = st.date_input("最晚签订时间", max_date, min_value=min_date, max_value=max_date, key="end3")
+        
+        selected_departments3 = st.multiselect("选择承办部门", departments, default=["经营管理部（预结算中心）"], key="dept3")
+        
+        chart_type3 = st.radio("选择图表类型", ["2D显示", "3D显示"], key="chart3", horizontal=True)
+        apply_filter3 = st.button("执行筛选条件", key="apply3")
 
-# 主页面
-if apply_filter:
-    # 转换为pandas datetime
-    part1_start_date = pd.to_datetime(part1_start_date)
-    part1_end_date = pd.to_datetime(part1_end_date)
-    part2_start_date = pd.to_datetime(part2_start_date)
-    part2_end_date = pd.to_datetime(part2_end_date)
-    part3_start_date = pd.to_datetime(part3_start_date)
-    part3_end_date = pd.to_datetime(part3_end_date)
-    
-    # 第一部分筛选结果：合同数量金额分析
-    filtered_part1 = df[
-        (df['签订时间'] >= part1_start_date) & 
-        (df['签订时间'] <= part1_end_date) & 
-        (df['承办部门'].isin(part1_selected_dept)) &
-        (df['选商方式'].isin(part1_selected_types))
-    ].copy()
-    
-    # 第二部分筛选结果：在建项目分析
-    filtered_part2 = df[
-        (df['签订时间'] >= part2_start_date) & 
-        (df['签订时间'] <= part2_end_date) & 
-        (df['承办部门'].isin(part2_selected_dept)) &
-        (df['履行期限(止)'] > current_time)
-    ].copy()
-    
-    # 第三部分筛选结果：分包付款分析
-    filtered_part3 = df[
-        (df['签订时间'] >= part3_start_date) & 
-        (df['签订时间'] <= part3_end_date) & 
-        (df['承办部门'].isin(part3_selected_dept))
-    ].copy()
-    
-    # 显示筛选结果
-    col1, col2 = st.columns(2)
+# 主页面布局
+col1, col2 = st.columns([1, 4])
+
+# 第一部分结果展示
+if apply_filter1:
     with col1:
-        st.metric("合同数量筛选结果", len(filtered_part1))
+        st.subheader("筛选条件")
+        st.write(f"时间范围: {start_date1} 至 {end_date1}")
+        st.write(f"承办部门: {', '.join(selected_departments1) if selected_departments1 else '全部'}")
+        st.write(f"采购类别: {', '.join(selected_types1) if selected_types1 else '全部'}")
+    
     with col2:
-        st.metric("在建项目筛选结果", len(filtered_part2))
-    
-    # 第一部分图表：合同数量金额分析
-    st.subheader("合同数量金额分析")
-    if not filtered_part1.empty:
-        if chart_type_part1 == "数量分析":
-            counts = filtered_part1['选商方式'].value_counts()
-            fig = create_bar_chart(counts, "采购类别合同数量分布", "采购类别", "合同数量", 0)
-            st.plotly_chart(fig, use_container_width=True)
+        filtered_df1 = df[
+            (df['签订时间'] >= pd.to_datetime(start_date1)) & 
+            (df['签订时间'] <= pd.to_datetime(end_date1)) & 
+            (df['承办部门'].isin(selected_departments1)) &
+            (df['选商方式'].isin(selected_types1))
+        ].copy()
+        
+        if not filtered_df1.empty:
+            # 按采购类别分组统计
+            stats1 = filtered_df1.groupby('选商方式').agg(
+                合同数量=('标的金额', 'count'),
+                合同金额=('标的金额', 'sum')
+            ).reset_index().set_index('选商方式')
+            
+            fig1 = create_plotly_chart(
+                stats1,
+                "采购类别合同数量与金额分析",
+                "采购类别",
+                ["合同数量", "合同金额"],
+                "3D" if chart_type1 == "3D显示" else "2D"
+            )
+            st.plotly_chart(fig1, use_container_width=True)
         else:
-            amount_by_type = filtered_part1.groupby('选商方式')['标的金额'].sum().sort_values(ascending=False)
-            fig = create_bar_chart(amount_by_type, "采购类别合同金额分布", "采购类别", "合同金额 (元)", 1)
-            st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("没有符合条件的合同数据")
+            st.warning("没有符合条件的数据")
+
+# 第二部分结果展示
+if apply_filter2:
+    with col1:
+        st.subheader("筛选条件")
+        st.write(f"时间范围: {start_date2} 至 {end_date2}")
+        st.write(f"承办部门: {', '.join(selected_departments2) if selected_departments2 else '全部'}")
     
-    # 第二部分图表：在建项目分析
-    st.subheader("在建项目分析")
-    if not filtered_part2.empty:
-        filtered_part2['年份'] = filtered_part2['履行期限(起)'].dt.year
-        yearly_stats = filtered_part2.groupby('年份').agg(
-            项目数量=('标的金额', 'count'),
-            合同金额=('标的金额', 'sum')
-        ).reset_index()
+    with col2:
+        # 筛选在建项目（履行期限(止) > 当前时间）
+        ongoing_projects = df[
+            (df['签订时间'] >= pd.to_datetime(start_date2)) & 
+            (df['签订时间'] <= pd.to_datetime(end_date2)) & 
+            (df['履行期限(止)'] > current_time) &
+            (df['承办部门'].isin(selected_departments2))
+        ].copy()
         
-        if chart_type_part2 == "数量分析":
-            fig = create_bar_chart(yearly_stats.set_index('年份')['项目数量'], 
-                                 "在建项目数量按年份分布", "年份", "项目数量", 2)
-            st.plotly_chart(fig, use_container_width=True)
+        if not ongoing_projects.empty:
+            # 提取年份
+            ongoing_projects['年份'] = ongoing_projects['履行期限(起)'].dt.year
+            
+            # 按年份分组统计
+            stats2 = ongoing_projects.groupby('年份').agg(
+                在建项目数量=('标的金额', 'count'),
+                在建项目金额=('标的金额', 'sum')
+            ).reset_index().set_index('年份')
+            
+            fig2 = create_plotly_chart(
+                stats2,
+                "在建项目数量与金额分析",
+                "年份",
+                ["在建项目数量", "在建项目金额"],
+                "3D" if chart_type2 == "3D显示" else "2D"
+            )
+            st.plotly_chart(fig2, use_container_width=True)
         else:
-            fig = create_bar_chart(yearly_stats.set_index('年份')['合同金额'], 
-                                 "在建项目金额按年份分布", "年份", "合同金额 (元)", 3)
-            st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("没有符合条件的在建项目")
+            st.warning("没有符合条件的在建项目")
+
+# 第三部分结果展示
+if apply_filter3:
+    with col1:
+        st.subheader("筛选条件")
+        st.write(f"时间范围: {start_date3} 至 {end_date3}")
+        st.write(f"承办部门: {', '.join(selected_departments3) if selected_departments3 else '全部'}")
     
-    # 第三部分图表：分包付款分析
-    st.subheader("分包付款分析")
-    if not filtered_part3.empty:
-        filtered_part3['年份'] = filtered_part3['签订时间'].dt.year
+    with col2:
+        filtered_df3 = df[
+            (df['签订时间'] >= pdeto_datetime(start_date3)) & 
+            (df['签订时间'] <= pd.to_datetime(end_date3)) & 
+            (df['承办部门'].isin(selected_departments3))
+        ].copy()
         
-        # 计算超付和未付
-        overpaid = filtered_part3[filtered_part3['超付金额'] > 0]
-        underpaid = filtered_part3[filtered_part3['超付金额'] < 0]
-        
-        if chart_type_part3 == "超付分析":
+        if not filtered_df3.empty:
+            # 计算超付和未付
+            overpaid = filtered_df3[filtered_df3['超付金额'] > 0]
+            unpaid = filtered_df3[filtered_df3['超付金额'] < 0]
+            
+            # 按年份分组统计
+            filtered_df3['年份'] = filtered_df3['签订时间'].dt.year
             overpaid_stats = overpaid.groupby('年份').agg(
-                超付数量=('超付金额', 'count'),
-                超付金额=('超付金额', 'sum')
-            ).reset_index()
+                已定超付数量=('超付金额', 'count'),
+                已定超付金额=('超付金额', 'sum')
+            )
+            unpaid_stats = unpaid.groupby('年份').agg(
+                已定未付数量=('超付金额', 'count'),
+                已定未付金额=('超付金额', 'sum')
+            )
             
-            col1, col2 = st.columns(2)
-            with col1:
-                fig = create_bar_chart(overpaid_stats.set_index('年份')['超付数量'], 
-                                     "已定超付数量按年份分布", "年份", "超付数量", 0)
-                st.plotly_chart(fig, use_container_width=True)
-            with col2:
-                fig = create_bar_chart(overpaid_stats.set_index('年份')['超付金额'], 
-                                     "已定超付金额按年份分布", "年份", "超付金额 (元)", 1)
-                st.plotly_chart(fig, use_container_width=True)
+            # 合并结果
+            stats3 = pd.concat([overpaid_stats, unpaid_stats], axis=1).fillna(0)
+            stats3['已定未付金额'] = stats3['已定未付金额'].abs()  # 取绝对值
+            
+            fig3 = create_plotly_chart(
+                stats3,
+                "分包付款分析",
+                "年份",
+                ["已定超付数量", "已定超付金额", "已定未付数量", "已定未付金额"],
+                "3D" if chart_type3 == "3D显示" else "2D"
+            )
+            st.plotly_chart(fig3, use_container_width=True)
         else:
-            underpaid_stats = underpaid.groupby('年份').agg(
-                未付数量=('超付金额', 'count'),
-                未付金额=('超付金额', 'sum')
-            ).reset_index()
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                fig = create_bar_chart(underpaid_stats.set_index('年份')['未付数量'], 
-                                     "已定未付数量按年份分布", "年份", "未付数量", 2)
-                st.plotly_chart(fig, use_container_width=True)
-            with col2:
-                fig = create_bar_chart(abs(underpaid_stats.set_index('年份')['未付金额']), 
-                                     "已定未付金额按年份分布", "年份", "未付金额 (元)", 3)
-                st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("没有符合条件的付款数据")
-    
-    # 添加下载按钮
-    st.subheader("数据导出")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        csv1 = filtered_part1.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="下载合同数据 (CSV)",
-            data=csv1,
-            file_name=f"合同数据_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime='text/csv'
-        )
-    with col2:
-        csv2 = filtered_part2.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="下载在建项目数据 (CSV)",
-            data=csv2,
-            file_name=f"在建项目数据_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime='text/csv'
-        )
-    with col3:
-        csv3 = filtered_part3.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="下载付款数据 (CSV)",
-            data=csv3,
-            file_name=f"付款数据_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime='text/csv'
-        )
-else:
-    st.info("请在左侧边栏设置筛选条件，然后点击'执行筛选条件'按钮")
+            st.warning("没有符合条件的数据")
 
-# 显示原始数据统计信息
-with st.expander("原始数据统计信息"):
-    st.subheader("数据概览")
-    st.write(f"总记录数: {len(df)}")
-    
-    st.subheader("各字段统计")
-    st.write(df.describe(include='all'))
-    
-    st.subheader("前5条记录")
-    st.dataframe(df.head())
+# 初始显示提示
+if not (apply_filter1 or apply_filter2 or apply_filter3):
+    st.info("请在左侧边栏设置筛选条件，然后点击相应的'执行筛选条件'按钮")
