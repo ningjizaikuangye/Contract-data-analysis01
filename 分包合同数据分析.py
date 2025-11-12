@@ -14,7 +14,7 @@ def check_password():
         """检查输入的密码是否正确"""
         if st.session_state["password"] == "yuelifeng@2018":
             st.session_state["password_correct"] = True
-            del st.session_state["password"]  # 删除密码，不存储
+            del st.session_state["password"]  #删除密码，不存储
         else:
             st.session_state["password_correct"] = False
     
@@ -71,7 +71,7 @@ def load_data():
         if '承办部门' in df.columns:
             df['承办部门'] = df['承办部门'].fillna('未知部门')
         return df
-    except Exception asprinting(e):
+    except Exception as e:  # 这里修正了语法错误
         st.error(f"读取数据时出错: {str(e)}")
         return None
 
@@ -365,7 +365,7 @@ if apply_filter2:
                     "3D" if chart_type2 == "3D显示" else "2D",
                     True
                 )
-                st.plotly_chart(fig_amount,使用_container_width=True)
+                st.plotly_chart(fig_amount, use_container_width=True)
         else:
             st.warning("没有符合条件的在建项目")
 
