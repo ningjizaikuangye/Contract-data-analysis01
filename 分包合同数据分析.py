@@ -14,7 +14,7 @@ def check_password():
         """检查输入的密码是否正确"""
         if st.session_state["password"] == "yuelifeng@2018":
             st.session_state["password_correct"] = True
-            del st.session_state["password"]  #删除密码，不存储
+            del st.session_state["password"]  # 删除密码，不存储
         else:
             st.session_state["password_correct"] = False
     
@@ -68,7 +68,7 @@ def load_data():
             df = df.iloc[:invalid_row]
         
         # 处理日期和金额字段
-       date_cols = ['签订时间', '履行期限(起)', '履行期限(止)']
+        date_cols = ['签订时间', '履行期限(起)', '履行期限(止)']
         for col in date_cols:
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col], errors='coerce')
@@ -208,9 +208,9 @@ with st.sidebar:
         # 时间范围
         date_col5, date_col6 = st.columns(2)
         with date_col5:
-            start_date3 = st.date_input("最早签订time", min_date, min_value=min_date, max_value=max_date, key="date3_start")
+            start_date3 = st.date_input("最早签订时间", min_date, min_value=min_date, max_value=max_date, key="date3_start")
         with date_col6:
-            end_date3 = st.date_input("最晚签订时间", max_date, min_value=min_date, max_value=max_date, key="date3_end")
+            end_date3 = st.date_input("最晚签订时间", max_date, min_value=min_date, max_value=max_date,key="date3_end")
         
         # 部门筛选
         selected_departments3 = st.multiselect("选择承办部门", departments, default=["经营管理部（预结算中心）"], key="dept3")
@@ -356,7 +356,7 @@ if apply_filter1 or apply_filter2 or apply_filter3:
                         "超付数量", 
                         0
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(f fig, use_container_width=True)
                     
                     fig = create_plotly_2d_chart(
                         overpaid_stats.set_index('年份')['超付金额'],
