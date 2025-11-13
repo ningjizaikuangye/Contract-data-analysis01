@@ -5,14 +5,14 @@ from datetime import datetime
 import os
 
 # 设置页面布局
-st.set_page_config(page_title="分包合同数据分析", layout="wide")
+st.set_page_config(page_title="分包合同数据分析系统", layout="wide")
 
 # 密码验证函数
 def check_password():
     """密码验证"""
     def password_entered():
         """检查输入的密码是否正确"""
-        if st.session_state["password"] == "@fbhtbzwb":
+        if st.session_state["password"] == "yuelifeng@2018":
             st.session_state["password_correct"] = True
             del st.session_state["password"]  # 删除密码，不存储
         else:
@@ -24,7 +24,7 @@ def check_password():
     if st.session_state["password_correct"]:
         return True
     
-    st.title("分包合同数据分析")
+    st.title("分包合同数据分析系统")
     st.markdown("---")
     st.subheader("🔒 系统访问认证")
     password = st.text_input(
@@ -45,7 +45,7 @@ if not check_password():
     st.stop()
 
 # 主应用
-st.title("分包合同数据分析")
+st.title("分包合同数据分析系统")
 
 # 定义文件路径
 file_path = "00 分包合同组合表.xlsx"
@@ -170,6 +170,10 @@ with st.sidebar:
     show_all = st.checkbox("同时显示", value=False, 
                           help="选中可同时显示所有筛选条件的图表，不选中则只显示当前执行的筛选条件结果")
     
+    # 新增"排除终止/解除合同"复选框
+    exclude_terminated = st.checkbox("排除终止/解除合同", value=True,
+                                   help="选中将排除'履约终止'和'履约解除'的合同")
+    
     # 第一部分：合同数量金额
     with st.expander("合同数量金额", expanded=True):
         # 时间范围
@@ -229,12 +233,17 @@ if apply_filter1 or apply_filter2 or apply_filter3 or show_all:
         start_date = pd.to_datetime(start_date)
         end_date = pd.to_datetime(end_date)
         
+        # 基础筛选条件
         filtered_df = df[
             (df['签订时间'] >= start_date) & 
             (df['签订时间'] <= end_date) & 
             (df['选商方式'].isin(selected_types)) &
             (df['承办部门'].isin(selected_departments))
         ].copy()
+        
+        # 排除终止/解除合同
+        if exclude_terminated and '履行状态' in filtered_df.columns:
+            filtered_df = filtered_df[~filtered_df['履行状态'].isin(['履约终止', '履约解除'])]
         
         with st.container():
             st.subheader("合同数量金额分析")
@@ -277,13 +286,17 @@ if apply_filter1 or apply_filter2 or apply_filter3 or show_all:
         start_date2 = pd.to_datetime(start_date2)
         end_date2 = pd.to_datetime(end_date2)
         
-        # 筛选在建项目（履行期限(止) > 当前时间）
+        # 基础筛选条件
         ongoing_projects = df[
             (df['履行期限(止)'] > current_time) &
             (df['签订时间'] >= start_date2) & 
             (df['签订时间'] <= end_date2) &
             (df['承办部门'].isin(selected_departments2))
         ].copy()
+        
+        # 排除终止/解除合同
+        if exclude_terminated and '履行状态' in ongoing_projects.columns:
+            ongoing_projects = ongoing_projects[~ongoing_projects['履行状态'].isin(['履约终止', '履约解除'])]
         
         with st.container():
             st.subheader("在建项目分析")
@@ -328,11 +341,16 @@ if apply_filter1 or apply_filter2 or apply_filter3 or show_all:
         start_date3 = pd.to_datetime(start_date3)
         end_date3 = pd.to_datetime(end_date3)
         
+        # 基础筛选条件
         payment_df = df[
             (df['签订时间'] >= start_date3) & 
             (df['签订时间'] <= end_date3) &
             (df['承办部门'].isin(selected_departments3))
         ].copy()
+        
+        # 排除终止/解除合同
+        if exclude_terminated and '履行状态' in payment_df.columns:
+            payment_df = payment_df[~payment_df['履行状态'].isin(['履约终止', '履约解除'])]
         
         with st.container():
             st.subheader("已审定分包付款分析")
