@@ -77,7 +77,8 @@ def load_data():
             df['标的金额'] = pd.to_numeric(df['标的金额'], errors='coerce')
         
         if '承办部门' in df.columns:
-            df['承办部门'] = df['承办部门'].fillna('未知部门')
+            # 移除部门为空的记录，不填充为"未知部门"
+            df = df[df['承办部门'].notna()]
         
         if '超付金额' in df.columns:
             df['超付金额'] = pd.to_numeric(df['超付金额'], errors='coerce')
@@ -108,7 +109,7 @@ def create_plotly_2d_chart(data, title, xlabel, ylabel, color_idx=0):
         labels = [f"类别{i}" for i in range(len(data))]
     
     # 创建Plotly柱状图
-    fig = go Figure(data=[
+    fig = go.Figure(data=[
         go.Bar(
             x=labels,
             y=values,
@@ -210,7 +211,7 @@ with st.sidebar:
         with date_col5:
             start_date3 = st.date_input("最早签订时间", min_date, min_value=min_date, max_value=max_date, key="date3_start")
         with date_col6:
-            end_date3 = st.date_input("最晚签订时间", max_date, min_value=min_date, max_value=max_date, key="date3_end")
+            end_date3 = st.date_input("最晚签订时间", max_date, min_value=min_date, max_value=max_date,key="date3_end")
         
         # 部门筛选
         selected_departments3 = st.multiselect("选择承办部门", departments, default=["经营管理部（预结算中心）"], key="dept3")
@@ -261,7 +262,7 @@ if apply_filter1 or apply_filter2 or apply_filter3:
                     "合同金额 (元)", 
                     1
                 )
-                st.plotly_chart(fig,use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("没有符合条件的数据")
     
