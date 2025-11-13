@@ -63,7 +63,7 @@ def load_data():
         df = pd.read_excel(file_path, sheet_name="组合表")
         
         # 找到A列中首次出现"#VALUE!"的行，截取有效数据
-        invalid_row = df[df.iloc[:, 0].astype(str).str.contains("# VALUE!")].index.min()
+        invalid_row = df[df.iloc[:, 0].astype(str).str.contains("#VALUE!")].index.min()
         if pd.notna(invalid_row):
             df = df.iloc[:invalid_row]
         
@@ -108,7 +108,7 @@ def create_plotly_2d_chart(data, title, xlabel, ylabel, color_idx=0):
         labels = [f"类别{i}" for i in range(len(data))]
     
     # 创建Plotly柱状图
-    fig = go.Figure(data=[
+    fig = go Figure(data=[
         go.Bar(
             x=labels,
             y=values,
@@ -210,7 +210,7 @@ with st.sidebar:
         with date_col5:
             start_date3 = st.date_input("最早签订时间", min_date, min_value=min_date, max_value=max_date, key="date3_start")
         with date_col6:
-            end_date3 = st.date_input("最晚签订时间", max_date, min_value=min_date, max_value=max_date,key="date3_end")
+            end_date3 = st.date_input("最晚签订时间", max_date, min_value=min_date, max_value=max_date, key="date3_end")
         
         # 部门筛选
         selected_departments3 = st.multiselect("选择承办部门", departments, default=["经营管理部（预结算中心）"], key="dept3")
@@ -261,7 +261,7 @@ if apply_filter1 or apply_filter2 or apply_filter3:
                     "合同金额 (元)", 
                     1
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig,use_container_width=True)
             else:
                 st.warning("没有符合条件的数据")
     
