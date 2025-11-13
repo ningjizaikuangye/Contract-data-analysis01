@@ -5,14 +5,14 @@ from datetime import datetime
 import os
 
 # 设置页面布局
-st.set_page_config(page_title="分包合同数据分析系统", layout="wide")
+st.set_page_config(page_title="分包合同数据分析", layout="wide")
 
 # 密码验证函数
 def check_password():
     """密码验证"""
     def password_entered():
         """检查输入的密码是否正确"""
-        if st.session_state["password"] == "yuelifeng@2018":
+        if st.session_state["password"] == "@fbhtbzwb":
             st.session_state["password_correct"] = True
             del st.session_state["password"]  # 删除密码，不存储
         else:
@@ -24,7 +24,7 @@ def check_password():
     if st.session_state["password_correct"]:
         return True
     
-    st.title("分包合同数据分析系统")
+    st.title("分包合同数据分析")
     st.markdown("---")
     st.subheader("🔒 系统访问认证")
     password = st.text_input(
@@ -45,7 +45,7 @@ if not check_password():
     st.stop()
 
 # 主应用
-st.title("分包合同数据分析系统")
+st.title("分包合同数据分析")
 
 # 定义文件路径
 file_path = "00 分包合同组合表.xlsx"
