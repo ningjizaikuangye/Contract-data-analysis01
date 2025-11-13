@@ -14,7 +14,7 @@ def check_password():
         """检查输入的密码是否正确"""
         if st.session_state["password"] == "yuelifeng@2018":
             st.session_state["password_correct"] = True
-            del st.session_state["password"]  # 删除密码，不存储
+            del st.session_state["password"]  #删除密码，不存储
         else:
             st.session_state["password_correct"] = False
     
@@ -68,7 +68,7 @@ def load_data():
             df = df.iloc[:invalid_row]
         
         # 处理日期和金额字段
-        date_cols = ['签订时间', '履行期限(起)', '履行期限(止)']
+       date_cols = ['签订时间', '履行期限(起)', '履行期限(止)']
         for col in date_cols:
             if col in df.columns:
                 df[col] = pd.to_datetime(df[col], errors='coerce')
@@ -108,7 +108,7 @@ def create_plotly_2d_chart(data, title, xlabel, ylabel, color_idx=0):
         labels = [f"类别{i}" for i in range(len(data))]
     
     # 创建Plotly柱状图
-    fig = go Figure(data=[
+    fig = go.Figure(data=[
         go.Bar(
             x=labels,
             y=values,
@@ -208,7 +208,7 @@ with st.sidebar:
         # 时间范围
         date_col5, date_col6 = st.columns(2)
         with date_col5:
-            start_date3 = st.date_input("最早签订时间", min_date, min_value=min_date, max_value=max_date, key="date3_start")
+            start_date3 = st.date_input("最早签订time", min_date, min_value=min_date, max_value=max_date, key="date3_start")
         with date_col6:
             end_date3 = st.date_input("最晚签订时间", max_date, min_value=min_date, max_value=max_date, key="date3_end")
         
@@ -261,7 +261,7 @@ if apply_filter1 or apply_filter2 or apply_filter3:
                     "合同金额 (元)", 
                     1
                 )
-                st.plotly_chart(fig,use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True)
             else:
                 st.warning("没有符合条件的数据")
     
