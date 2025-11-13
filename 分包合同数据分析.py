@@ -166,6 +166,10 @@ def setup_plotly_chinese_font(fig):
 with st.sidebar:
     st.header("筛选条件")
     
+    # 新增"同时显示"复选框
+    show_all = st.checkbox("同时显示", value=False, 
+                          help="选中可同时显示所有筛选条件的图表，不选中则只显示当前执行的筛选条件结果")
+    
     # 第一部分：合同数量金额
     with st.expander("合同数量金额", expanded=True):
         # 时间范围
@@ -219,9 +223,9 @@ with st.sidebar:
         apply_filter3 = st.button("执行筛选条件", key="apply3")
 
 # 主页面布局
-if apply_filter1 or apply_filter2 or apply_filter3:
+if apply_filter1 or apply_filter2 or apply_filter3 or show_all:
     # 第一部分：合同数量金额
-    if apply_filter1:
+    if show_all or apply_filter1:
         start_date = pd.to_datetime(start_date)
         end_date = pd.to_datetime(end_date)
         
@@ -232,42 +236,44 @@ if apply_filter1 or apply_filter2 or apply_filter3:
             (df['承办部门'].isin(selected_departments))
         ].copy()
         
-        st.success(f"筛选到 {len(filtered_df)} 条记录")
-        
-        # 合同数量金额分析
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("合同数量")
-            if not filtered_df.empty:
-                counts = filtered_df['选商方式'].value_counts()
-                fig = create_plotly_2d_chart(
-                    counts, 
-                    "采购类别合同数量分布", 
-                    "采购类别", 
-                    "合同数量", 
-                    0
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.warning("没有符合条件的数据")
-                
-        with col2:
-            st.subheader("合同金额")
-            if not filtered_df.empty:
-                amount_by_type = filtered_df.groupby('选商方式')['标的金额'].sum().sort_values(ascending=False)
-                fig = create_plotly_2d_chart(
-                    amount_by_type,
-                    "采购类别合同金额分布",
-                    "采购类别", 
-                    "合同金额 (元)", 
-                    1
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.warning("没有符合条件的数据")
+        with st.container():
+            st.subheader("合同数量金额分析")
+            st.write(f"筛选到 {len(filtered_df)} 条记录")
+            
+            # 合同数量金额分析
+            col1, col2 = st.columns(2)
+            with col1:
+                st.subheader("合同数量")
+                if not filtered_df.empty:
+                    counts = filtered_df['选商方式'].value_counts()
+                    fig = create_plotly_2d_chart(
+                        counts, 
+                        "采购类别合同数量分布", 
+                        "采购类别", 
+                        "合同数量", 
+                        0
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("没有符合条件的数据")
+                    
+            with col2:
+                st.subheader("合同金额")
+                if not filtered_df.empty:
+                    amount_by_type = filtered_df.groupby('选商方式')['标的金额'].sum().sort_values(ascending=False)
+                    fig = create_plotly_2d_chart(
+                        amount_by_type,
+                        "采购类别合同金额分布",
+                        "采购类别", 
+                        "合同金额 (元)", 
+                        1
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("没有符合条件的数据")
     
     # 第二部分：在建项目分析
-    if apply_filter2:
+    if show_all or apply_filter2:
         start_date2 = pd.to_datetime(start_date2)
         end_date2 = pd.to_datetime(end_date2)
         
@@ -279,44 +285,46 @@ if apply_filter1 or apply_filter2 or apply_filter3:
             (df['承办部门'].isin(selected_departments2))
         ].copy()
         
-        if not ongoing_projects.empty:
-            # 提取年份
-            ongoing_projects['年份'] = ongoing_projects['履行期限(起)'].dt.year
-            
-            # 按年份分组统计
-            yearly_stats = ongoing_projects.groupby('年份').agg(
-                项目数量=('标的金额', 'count'),
-                合同金额=('标的金额', 'sum')
-            ).reset_index()
-            
-            col3, col4 = st.columns(2)
-            
-            with col3:
-                st.subheader("在建项目数量")
-                fig = create_plotly_2d_chart(
-                    yearly_stats.set_index('年份')['项目数量'],
-                    "在建项目数量按年份分布",
-                    "年份", 
-                    "项目数量", 
-                    2
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            
-            with col4:
-                st.subheader("在建项目金额")
-                fig = create_plotly_2d_chart(
-                    yearly_stats.set_index('年份')['合同金额'],
-                    "在建项目金额按年份分布", 
-                    "年份", 
-                    "合同金额 (元)",
-                    3
-                )
-                st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.warning("没有符合条件的在建项目")
+        with st.container():
+            st.subheader("在建项目分析")
+            if not ongoing_projects.empty:
+                # 提取年份
+                ongoing_projects['年份'] = ongoing_projects['履行期限(起)'].dt.year
+                
+                # 按年份分组统计
+                yearly_stats = ongoing_projects.groupby('年份').agg(
+                    项目数量=('标的金额', 'count'),
+                    合同金额=('标的金额', 'sum')
+                ).reset_index()
+                
+                col3, col4 = st.columns(2)
+                
+                with col3:
+                    st.subheader("在建项目数量")
+                    fig = create_plotly_2d_chart(
+                        yearly_stats.set_index('年份')['项目数量'],
+                        "在建项目数量按年份分布",
+                        "年份", 
+                        "项目数量", 
+                        2
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                with col4:
+                    st.subheader("在建项目金额")
+                    fig = create_plotly_2d_chart(
+                        yearly_stats.set_index('年份')['合同金额'],
+                        "在建项目金额按年份分布", 
+                        "年份", 
+                        "合同金额 (元)",
+                        3
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("没有符合条件的在建项目")
     
     # 第三部分：已审定分包付款
-    if apply_filter3:
+    if show_all or apply_filter3:
         start_date3 = pd.to_datetime(start_date3)
         end_date3 = pd.to_datetime(end_date3)
         
@@ -326,74 +334,76 @@ if apply_filter1 or apply_filter2 or apply_filter3:
             (df['承办部门'].isin(selected_departments3))
         ].copy()
         
-        if not payment_df.empty:
-            # 提取年份
-            payment_df['年份'] = payment_df['签订时间'].dt.year
-            
-            # 分类超付和未付
-            overpaid = payment_df[payment_df['超付金额'] > 0]
-            underpaid = payment_df[payment_df['超付金额'] < 0]
-            
-            # 按年份分组统计
-            overpaid_stats = overpaid.groupby('年份').agg(
-                超付数量=('标的金额', 'count'),
-                超付金额=('标的金额', 'sum')
-            ).reset_index()
-            
-            underpaid_stats = underpaid.groupby('年份').agg(
-                未付数量=('标的金额', 'count'),
-                未付金额=('标的金额', 'sum')
-            ).reset_index()
-            
-            col5, col6 = st.columns(2)
-            
-            with col5:
-                st.subheader("超付情况")
-                if not overpaid.empty:
-                    fig = create_plotly_2d_chart(
-                        overpaid_stats.set_index('年份')['超付数量'],
-                        "超付数量按年份分布",
-                        "年份", 
-                        "超付数量", 
-                        0
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    fig = create_plotly_2d_chart(
-                        overpaid_stats.set_index('年份')['超付金额'],
-                        "超付金额按年份分布",
-                        "年份", 
-                        "超付金额 (元)", 
-                        1
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.warning("没有超付记录")
-            
-            with col6:
-                st.subheader("未付情况")
-                if not underpaid.empty:
-                    fig = create_plotly_2d_chart(
-                        underpaid_stats.set_index('年份')['未付数量'],
-                        "未付数量按年份分布",
-                        "年份", 
-                        "未付数量", 
-                        2
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    fig = create_plotly_2d_chart(
-                        underpaid_stats.set_index('年份')['未付金额'],
-                        "未付金额按年份分布",
-                        "年份", 
-                        "未付金额 (元)", 
-                        3
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.warning("没有未付记录")
-        else:
-            st.warning("没有符合条件的付款记录")
+        with st.container():
+            st.subheader("已审定分包付款分析")
+            if not payment_df.empty:
+                # 提取年份
+                payment_df['年份'] = payment_df['签订时间'].dt.year
+                
+                # 分类超付和未付
+                overpaid = payment_df[payment_df['超付金额'] > 0]
+                underpaid = payment_df[payment_df['超付金额'] < 0]
+                
+                # 按年份分组统计
+                overpaid_stats = overpaid.groupby('年份').agg(
+                    超付数量=('标的金额', 'count'),
+                    超付金额=('标的金额', 'sum')
+                ).reset_index()
+                
+                underpaid_stats = underpaid.groupby('年份').agg(
+                    未付数量=('标的金额', 'count'),
+                    未付金额=('标的金额', 'sum')
+                ).reset_index()
+                
+                col5, col6 = st.columns(2)
+                
+                with col5:
+                    st.subheader("超付情况")
+                    if not overpaid.empty:
+                        fig = create_plotly_2d_chart(
+                            overpaid_stats.set_index('年份')['超付数量'],
+                            "超付数量按年份分布",
+                            "年份", 
+                            "超付数量", 
+                            0
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        fig = create_plotly_2d_chart(
+                            overpaid_stats.set_index('年份')['超付金额'],
+                            "超付金额按年份分布",
+                            "年份", 
+                            "超付金额 (元)", 
+                            1
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("没有超付记录")
+                
+                with col6:
+                    st.subheader("未付情况")
+                    if not underpaid.empty:
+                        fig = create_plotly_2d_chart(
+                            underpaid_stats.set_index('年份')['未付数量'],
+                            "未付数量按年份分布",
+                            "年份", 
+                            "未付数量", 
+                            2
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        fig = create_plotly_2d_chart(
+                            underpaid_stats.set_index('年份')['未付金额'],
+                            "未付金额按年份分布",
+                            "年份", 
+                            "未付金额 (元)", 
+                            3
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("没有未付记录")
+            else:
+                st.warning("没有符合条件的付款记录")
 else:
     st.info("请在左侧边栏设置筛选条件，然后点击相应的'执行筛选条件'按钮")
 
