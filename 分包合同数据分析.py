@@ -63,7 +63,7 @@ def load_data():
         df = pd.read_excel(file_path, sheet_name="组合表")
         
         # 找到A列中首次出现"#VALUE!"的行，截取有效数据
-        invalid_row = df[df.iloc[:, 0].astype(str).str.contains("#VALUE!")].index.min()
+        invalid_row = df[df.iloc[:, 0].astype(str).str.contains("# VALUE!")].index.min()
         if pd.notna(invalid_row):
             df = df.iloc[:invalid_row]
         
@@ -356,7 +356,7 @@ if apply_filter1 or apply_filter2 or apply_filter3:
                         "超付数量", 
                         0
                     )
-                    st.plotly_chart(f fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True)
                     
                     fig = create_plotly_2d_chart(
                         overpaid_stats.set_index('年份')['超付金额'],
